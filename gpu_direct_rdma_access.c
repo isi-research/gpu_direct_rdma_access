@@ -55,8 +55,8 @@
 #include "ibv_helper.h"
 #include "gpu_direct_rdma_access.h"
 
-int debug = 1;
-int debug_fast_path = 1;
+int debug = 0;
+int debug_fast_path = 0;
 
 #define DEBUG_LOG if (debug) printf
 #define DEBUG_LOG_FAST_PATH if (debug_fast_path) printf

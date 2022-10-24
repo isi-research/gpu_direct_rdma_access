@@ -51,15 +51,15 @@
 extern int debug;
 extern int debug_fast_path;
 
-// #define DEBUG_LOG if (debug) printf
-// #define DEBUG_LOG_FAST_PATH if (debug_fast_path) printf
-// #define FDEBUG_LOG if (debug) fprintf
-// #define FDEBUG_LOG_FAST_PATH if (debug_fast_path) fprintf
+#define DEBUG_LOG if (debug) printf
+#define DEBUG_LOG_FAST_PATH if (debug_fast_path) printf
+#define FDEBUG_LOG if (debug) fprintf
+#define FDEBUG_LOG_FAST_PATH if (debug_fast_path) fprintf
 
-#define DEBUG_LOG printf
-#define DEBUG_LOG_FAST_PATH printf
-#define FDEBUG_LOG fprintf
-#define FDEBUG_LOG_FAST_PATH fprintf
+// #define DEBUG_LOG printf
+// #define DEBUG_LOG_FAST_PATH printf
+// #define FDEBUG_LOG fprintf
+// #define FDEBUG_LOG_FAST_PATH fprintf
 
 #define ACK_MSG "rdma_task completed"
 
