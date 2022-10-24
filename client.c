@@ -433,14 +433,15 @@ int main(int argc, char *argv[])
 
         // Printing received data for debug purpose
         DEBUG_LOG_FAST_PATH("Received ack N %d: \"%s\"\n", cnt, ackmsg);
+        cudaDeviceSynchronize();
         if (usr_par.use_cuda) {
           //Read the content
           char host_msg[128];
           LOG_CUDA_ERROR(cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost));
-          // cuMemcpyD2H(host_msg, buff, 128);
+          cudaDeviceSynchronize();
           DEBUG_LOG_FAST_PATH("Written data from the server to GPU memory. Frame=[%d], data=[%s]\n", cnt, host_msg);
         } else {
-            DEBUG_LOG_FAST_PATH("Written data \"%s\"\n", (char*)buff);
+          DEBUG_LOG_FAST_PATH("Written data from the server to CPU Host memory. Frame=[%d], data=[%s]\n", cnt, (char*)buff);
         }
         DEBUG_LOG_FAST_PATH("----------------------------------------------\n");
     }
