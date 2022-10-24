@@ -182,10 +182,11 @@ static int parse_command_line(int argc, char *argv[], struct user_params *usr_pa
             { .name = "iters",         .has_arg = 1, .val = 'n' },
             { .name = "sg_list-len",   .has_arg = 1, .val = 'l' },
             { .name = "debug-mask",    .has_arg = 1, .val = 'D' },
+            { .name = "use-cuda",      .has_arg = 1, .val = 'u' },
             { 0 }
         };
 
-        c = getopt_long(argc, argv, "Pa:p:s:n:l:D:",
+        c = getopt_long(argc, argv, "Pa:p:s:n:l:D:u:",
                         long_options, NULL);
 
         if (c == -1)
