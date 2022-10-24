@@ -373,7 +373,8 @@ sock_listen:
           memset(msg, 0, 128);
           snprintf(msg, 128, "write frame number %d", cnt);
           DEBUG_LOG_FAST_PATH(">> Copying message to cuda memory [%s]\n", msg);
-          cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice);
+          cuMemcpyHtoD(buff, msg, 128);
+          //cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice);
         } else {
           SDEBUG_LOG_FAST_PATH ((char*)buff, "Read iteration N %d", cnt);
         }

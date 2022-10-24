@@ -809,7 +809,7 @@ struct rdma_device *rdma_open_device_server(struct sockaddr *addr)
 
     DEBUG_LOG ("mlx5dv_create_qp(%p)\n", rdma_dev->context);
     rdma_dev->qp = mlx5dv_create_qp(rdma_dev->context, &attr_ex, &attr_dv);
-    DEBUG_LOG ("mlx5dv_create_qp %p completed: qp_num = 0x%lx\n", rdma_dev->qp, rdma_dev->qp->qp_num);
+    DEBUG_LOG ("mlx5dv_create_qp %p completed: qp_num = 0x%x\n", rdma_dev->qp, rdma_dev->qp->qp_num);
 
     if (!rdma_dev->qp)  {
         fprintf(stderr, "Couldn't create QP\n");

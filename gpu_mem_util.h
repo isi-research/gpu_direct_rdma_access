@@ -45,7 +45,6 @@ extern "C" {
     exit(EXIT_FAILURE); \
   } \
 
-
 /*
  * Memory allocation on CPU or GPU according to HAVE_CUDA pre-compile option and use_cuda flag
  *
