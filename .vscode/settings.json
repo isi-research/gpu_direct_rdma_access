@@ -1,0 +1,5 @@
+{
+  "files.associations": {
+    "gpu_mem_util.h": "c"
+  }
+}

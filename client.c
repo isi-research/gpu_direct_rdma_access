@@ -409,6 +409,7 @@ int main(int argc, char *argv[])
      * The main loop where client and server send and receive "iters" number of messages
      */
     for (cnt = 0; cnt < usr_par.iters; cnt++) {
+        DEBUG_LOG_FAST_PATH("----------------------------------------------\n");
 
         char ackmsg[sizeof ACK_MSG];
         int  ret_size;
@@ -440,6 +441,7 @@ int main(int argc, char *argv[])
         } else {
             DEBUG_LOG_FAST_PATH("Written data \"%s\"\n", (char*)buff);
         }
+        DEBUG_LOG_FAST_PATH("----------------------------------------------\n");
     }
     /****************************************************************************************************/
 

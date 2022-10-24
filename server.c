@@ -314,6 +314,7 @@ sock_listen:
      * The main loop where we client and server send and receive "iters" number of messages
      */
     for (cnt = 0; cnt < usr_par.iters && keep_running; cnt++) {
+        DEBUG_LOG_FAST_PATH("----------------------------------------------\n");
 
         int                            r_size;
         char                           desc_str[sizeof "0102030405060708:01020304:01020304:0102:010203:1:0102030405060708090a0b0c0d0e0f10"];
@@ -364,8 +365,7 @@ sock_listen:
         task_attr.wr_id                    = cnt;// * expected_comp_events;
 
         /* Executing RDMA read */
-        //Pourya: DO NOT WRITE to gpu buffer from host like this
-        // SDEBUG_LOG_FAST_PATH ((char*)buff, "Read iteration N %d", cnt);
+
 
         if(usr_par.use_cuda) {
           //copy to local memory
@@ -374,6 +374,8 @@ sock_listen:
           snprintf(msg, 128, "write frame number %d", cnt);
           DEBUG_LOG_FAST_PATH(">> Copying message to cuda memory [%s]\n", msg);
           cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice);
+        } else {
+          SDEBUG_LOG_FAST_PATH ((char*)buff, "Read iteration N %d", cnt);
         }
 
         /* Prepare send sg_list */
@@ -430,6 +432,8 @@ sock_listen:
             ret_val = 1;
             goto clean_socket;
         }
+
+        DEBUG_LOG_FAST_PATH("----------------------------------------------\n");
     }
     /****************************************************************************************************/
 
