@@ -373,8 +373,7 @@ sock_listen:
           memset(msg, 0, 128);
           snprintf(msg, 128, "write frame number %d", cnt);
           DEBUG_LOG_FAST_PATH(">> Copying message to cuda memory [%s]\n", msg);
-          cuMemcpyHtoD(buff, msg, 128);
-          //cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice);
+          LOG_CUDA_ERROR(cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice));
         } else {
           SDEBUG_LOG_FAST_PATH ((char*)buff, "Read iteration N %d", cnt);
         }
@@ -429,7 +428,7 @@ sock_listen:
 
         // Sending ack-message to the client, confirming that RDMA read/write has been completet
         if (write(sockfd, ACK_MSG, sizeof(ACK_MSG)) != sizeof(ACK_MSG)) {
-            fprintf(stderr, "FAILURE: Couldn't send \"%c\" msg (errno=%d '%m')\n", ACK_MSG, errno);
+            fprintf(stderr, "FAILURE: Couldn't send \"%s\" msg (errno=%d '%m')\n", ACK_MSG, errno);
             ret_val = 1;
             goto clean_socket;
         }

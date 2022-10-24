@@ -449,7 +449,7 @@ static int modify_source_qp_to_rtr_and_rts(struct rdma_device *rdma_dev)
         fprintf(stderr, "Failed to modify QP to RTR\n");
         return 1;
     }
-    DEBUG_LOG ("ibv_modify_qp to state %d completed: qp_num = 0x%lx\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
+    DEBUG_LOG ("ibv_modify_qp to state %d completed: qp_num = 0x%x\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
 
     /* - - - - - - -  Modify QP to RTS  - - - - - - - */
     qp_attr.qp_state       = IBV_QPS_RTS;
@@ -470,7 +470,7 @@ static int modify_source_qp_to_rtr_and_rts(struct rdma_device *rdma_dev)
         fprintf(stderr, "Failed to modify QP to RTS\n");
         return 1;
     }
-    DEBUG_LOG ("ibv_modify_qp to state %d completed: qp_num = 0x%lx\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
+    DEBUG_LOG ("ibv_modify_qp to state %d completed: qp_num = 0x%x\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
 
     return 0;
 }
@@ -509,7 +509,7 @@ static int modify_source_qp_rst2rts(struct rdma_device *rdma_dev)
         fprintf(stderr, "Failed to modify QP to INIT, error %d\n", ret_val);
         return 1;
     }
-    DEBUG_LOG("ibv_modify_qp to state %d completed: qp_num = 0x%lx\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
+    DEBUG_LOG("ibv_modify_qp to state %d completed: qp_num = 0x%x\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
 
     /* - - - - - - - - - - - - -  Modify QP to RTS  - - - - - - - - - - - - */
     ret_val = modify_source_qp_to_rtr_and_rts(rdma_dev);
@@ -627,7 +627,7 @@ struct rdma_device *rdma_open_device_client(struct sockaddr *addr)
         fprintf(stderr, "Couldn't create QP\n");
         goto clean_srq;
     }
-    DEBUG_LOG ("mlx5dv_create_qp %p completed: qp_num = 0x%lx\n", rdma_dev->qp, rdma_dev->qp->qp_num);
+    DEBUG_LOG ("mlx5dv_create_qp %p completed: qp_num = 0x%x\n", rdma_dev->qp, rdma_dev->qp->qp_num);
 
     /* - - - - - - -  Modify QP to INIT  - - - - - - - */
     struct ibv_qp_attr qp_attr = {
@@ -647,7 +647,7 @@ struct rdma_device *rdma_open_device_client(struct sockaddr *addr)
         fprintf(stderr, "Failed to modify QP to INIT, error %d\n", ret_val);
         goto clean_qp;
     }
-    DEBUG_LOG ("ibv_modify_qp to state %d completed: qp_num = 0x%lx\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
+    DEBUG_LOG ("ibv_modify_qp to state %d completed: qp_num = 0x%x\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
 
     ret_val = modify_target_qp_to_rtr(rdma_dev);
     if (ret_val) {
@@ -1090,7 +1090,7 @@ int rdma_reset_device(struct rdma_device *device)
 		fprintf(stderr, "Failed to modify QP to RESET\n");
 		return 1;
 	}
-	DEBUG_LOG ("ibv_modify_qp to state %d completed.\n", qp_attr.qp_state, device->qp->qp_num);
+	DEBUG_LOG ("ibv_modify_qp to state %d completed.\n", qp_attr.qp_state);
 
 	/* - - - - - - - Modify QP to RTS (RESET->INIT->RTR->RTS) - - - - - - - */
 	return modify_source_qp_rst2rts(device);
@@ -1382,15 +1382,19 @@ int rdma_submit_task(struct rdma_task_attr *attr)
 	DEBUG_LOG_FAST_PATH("Starting to parse desc string: \"%s\"\n", attr->remote_buf_desc_str);
 	/*   addr             size     rkey     lid  dctn   g gid
 	 *  "0102030405060708:01020304:01020304:0102:010203:1:0102030405060708090a0b0c0d0e0f10"*/
-	sscanf(attr->remote_buf_desc_str, "%llx:%lx:%lx:%hx:%lx:%d",
-			&exec_params.rem_buf_addr, &exec_params.rem_buf_size,
-		       	&exec_params.rem_buf_rkey, &rem_lid,
-			&exec_params.rem_dctn, &is_global);
+	sscanf(attr->remote_buf_desc_str, "%llx:%x:%lx:%hx:%lx:%d",
+	     	 &exec_params.rem_buf_addr,
+         &exec_params.rem_buf_size,
+		     &exec_params.rem_buf_rkey,
+         &rem_lid,
+			   &exec_params.rem_dctn,
+         &is_global);
+
 	memset(&rem_gid, 0, sizeof(rem_gid));
 	if (is_global) {
 		wire_gid_to_gid(attr->remote_buf_desc_str + sizeof "0102030405060708:01020304:01020304:0102:010203:1", &rem_gid);
 	}
-	DEBUG_LOG_FAST_PATH("rem_buf_addr=0x%llx, rem_buf_size=%u, rem_buf_offset=%u, rem_buf_rkey=0x%lx, rem_lid=0x%hx, rem_dctn=0x%lx, is_global=%d\n",
+	DEBUG_LOG_FAST_PATH("rem_buf_addr=0x%llx, rem_buf_size=%u, rem_buf_offset=%lu, rem_buf_rkey=0x%lx, rem_lid=0x%hx, rem_dctn=0x%lx, is_global=%d\n",
 			exec_params.rem_buf_addr, exec_params.rem_buf_size, attr->remote_buf_offset, exec_params.rem_buf_rkey, rem_lid, exec_params.rem_dctn, is_global);
        	DEBUG_LOG_FAST_PATH("Rem GID: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
                         rem_gid.raw[0],  rem_gid.raw[1],  rem_gid.raw[2],  rem_gid.raw[3],

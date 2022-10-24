@@ -415,7 +415,7 @@ int main(int argc, char *argv[])
         int  ret_size;
 
         // Sending RDMA data (address and rkey) by socket as a triger to start RDMA read/write operation
-        DEBUG_LOG_FAST_PATH("Send message N %d: buffer desc \"%s\" of size %d with task opt \"%s\" of size %d\n", cnt, desc_str, strlen(desc_str), task_opt_str, strlen(task_opt_str));
+        DEBUG_LOG_FAST_PATH("Send message N %d: buffer desc \"%s\" of size %lu with task opt \"%s\" of size %lu\n", cnt, desc_str, strlen(desc_str), task_opt_str, strlen(task_opt_str));
         ret_size = write(sockfd, package, buff_package_size);
         if (ret_size != buff_package_size) {
             fprintf(stderr, "FAILURE: Couldn't send RDMA data for iteration, write data size %d (errno=%d '%m')\n", ret_size, errno);
@@ -436,7 +436,8 @@ int main(int argc, char *argv[])
         if (usr_par.use_cuda) {
           //Read the content
           char host_msg[128];
-          cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost);
+          LOG_CUDA_ERROR(cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost));
+          // cuMemcpyD2H(host_msg, buff, 128);
           DEBUG_LOG_FAST_PATH("Written data from the server to GPU memory. Frame=[%d], data=[%s]\n", cnt, host_msg);
         } else {
             DEBUG_LOG_FAST_PATH("Written data \"%s\"\n", (char*)buff);

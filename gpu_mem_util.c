@@ -280,4 +280,19 @@ void work_buffer_free(void *buff, int use_cuda)
 }
 
 /*----------------------------------------------------------------------------*/
+const char* GetLowLevelCudaErrorName(CUresult error) {
+  const char* error_name = NULL;
+  if(error != CUDA_SUCCESS) {
+    cuGetErrorName(error, &error_name);
+  }
+  return error_name;
+}
+
+const char* GetLowLevelCudaErrorString(CUresult error) {
+  const char* error_str = NULL;
+  if(error != CUDA_SUCCESS) {
+    cuGetErrorString(error, &error_str);
+  }
+  return error_str;
+}
 

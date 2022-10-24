@@ -35,6 +35,8 @@
 
 #include <cuda_runtime.h>
 
+#include <cuda.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,6 +58,10 @@ void *work_buffer_alloc(size_t length, int use_cuda, const char *bdf);
  * CPU or GPU memory free, according to HAVE_CUDA pre-compile option and use_cuda flag
  */
 void work_buffer_free(void *buff, int use_cuda);
+
+const char* GetLowLevelCudaErrorName(CUresult error);
+
+const char* GetLowLevelCudaErrorString(CUresult error);
 
 
 #ifdef __cplusplus
