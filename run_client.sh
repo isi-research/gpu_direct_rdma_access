@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-echo "set the correct ip addresses on the server side pouryas-ud2"
-sudo ifconfig ibp97s0f0 up 192.168.0.200
-sudo ifconfig ibp97s0f1 up 192.168.0.210
-
+# echo "set the correct ip addresses on the server side pouryas-ud2"
+# sudo ifconfig ibp97s0f0 up 192.168.0.200
+# sudo ifconfig ibp97s0f1 up 192.168.0.210
 
 echo "running the server side"
 set -x
