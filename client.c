@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
         if (usr_par.use_cuda) {
           //Read the content
           char host_msg[128];
-          LOG_CUDA_ERROR(cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost));
+          cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost);
           DEBUG_LOG_FAST_PATH("Written data from the server side %d: \"%s\"\n", cnt, host_msg);
         } else {
             DEBUG_LOG_FAST_PATH("Written data \"%s\"\n", (char*)buff);

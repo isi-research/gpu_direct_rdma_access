@@ -41,7 +41,7 @@ extern "C" {
 
 #define LOG_CUDA_ERROR(error) \
   if (error != cudaSuccess) { \
-    fprintf(stderr, "CUDA Error(%d) %s (%s) at: %d\n", error, cudaGetErrorName(error), cudaGetErrorString(error), #error);\
+    fprintf(stderr, "CUDA Error(%d) %s (%s) at: %s\n", error, cudaGetErrorName(error), cudaGetErrorString(error), #error);\
     exit(EXIT_FAILURE); \
   } \
 
