@@ -48,9 +48,10 @@
 #include <arpa/inet.h>
 #include <time.h>
 
+#define HAVE_CUDA 1
+
 #ifdef HAVE_CUDA
-/* "/usr/local/cuda/include/" is added to build include path in the Makefile */
-#include "cuda.h"
+    #include "cuda.h"
 #endif //HAVE_CUDA
 
 #include "gpu_mem_util.h"
@@ -58,10 +59,15 @@
 extern int debug;
 extern int debug_fast_path;
 
-#define DEBUG_LOG if (debug) printf
-#define DEBUG_LOG_FAST_PATH if (debug_fast_path) printf
-#define FDEBUG_LOG if (debug) fprintf
-#define FDEBUG_LOG_FAST_PATH if (debug_fast_path) fprintf
+// #define DEBUG_LOG if (debug) printf
+// #define DEBUG_LOG_FAST_PATH if (debug_fast_path) printf
+// #define FDEBUG_LOG if (debug) fprintf
+// #define FDEBUG_LOG_FAST_PATH if (debug_fast_path) fprintf
+
+#define DEBUG_LOG printf
+#define DEBUG_LOG_FAST_PATH printf
+#define FDEBUG_LOG fprintf
+#define FDEBUG_LOG_FAST_PATH fprintf
 
 #ifdef HAVE_CUDA
 #define ASSERT(x)   \
@@ -88,11 +94,11 @@ static void print_gpu_devices_info(void)
 {
     int     device_count = 0;
     int     i;
-    
+
     CUCHECK(cuDeviceGetCount(&device_count));
-    
-    DEBUG_LOG("The number of supporting CUDA devices is %d.\n", device_count);
-    
+
+    printf("The number of supporting CUDA devices is %d.\n", device_count);
+
     for (i = 0; i < device_count; i++) {
         CUdevice    cu_dev;
         char        name[128];
@@ -105,8 +111,8 @@ static void print_gpu_devices_info(void)
         CUCHECK(cuDeviceGetAttribute (&pci_bus_id   , CU_DEVICE_ATTRIBUTE_PCI_BUS_ID   , cu_dev)); /*PCI bus identifier of the device*/
         CUCHECK(cuDeviceGetAttribute (&pci_device_id, CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID, cu_dev)); /*PCI device (also known as slot) identifier of the device*/
 
-        DEBUG_LOG("device %d, handle %d, name \"%s\", BDF %02x:%02x.%d\n",
-                  i, cu_dev, name, pci_bus_id, pci_device_id, pci_func);
+        printf("device %d, handle %d, name \"%s\", BDF %02x:%02x.%d\n",
+               i, cu_dev, name, pci_bus_id, pci_device_id, pci_func);
     }
 }
 
@@ -118,7 +124,7 @@ static int get_gpu_device_id_from_bdf(const char *bdf)
     int     device_count = 0;
     int     i;
     int     ret_val;
-    
+
                     /*    "3e:02.0"*/
     ret_val = sscanf(bdf, "%x:%x.%x", &given_bus_id, &given_device_id, &given_func);
     if (ret_val != 3){
@@ -131,7 +137,7 @@ static int get_gpu_device_id_from_bdf(const char *bdf)
         return -1;
     }
     CUCHECK(cuDeviceGetCount(&device_count));
-    
+
     if (device_count == 0) {
         fprintf(stderr, "There are no available devices that support CUDA\n");
         return -1;
@@ -167,10 +173,9 @@ static void *init_gpu(size_t gpu_buf_size, const char *bdf)
         return NULL;
     }
 
-    if (debug) {
-        print_gpu_devices_info();
-    }
-    
+    printf("printing gpu info\n");
+    print_gpu_devices_info();
+
     int dev_id = get_gpu_device_id_from_bdf(bdf);
     if (dev_id < 0) {
         fprintf(stderr, "Wrong device index (%d) obtained from bdf \"%s\"\n",

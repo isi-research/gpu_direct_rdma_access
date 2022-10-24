@@ -55,8 +55,8 @@
 #include "ibv_helper.h"
 #include "gpu_direct_rdma_access.h"
 
-int debug = 0;
-int debug_fast_path = 0;
+int debug = 1;
+int debug_fast_path = 1;
 
 #define DEBUG_LOG if (debug) printf
 #define DEBUG_LOG_FAST_PATH if (debug_fast_path) printf
@@ -64,12 +64,12 @@ int debug_fast_path = 0;
 #define FDEBUG_LOG_FAST_PATH if (debug_fast_path) fprintf
 
 #define CQ_DEPTH        640
-#define SEND_Q_DEPTH    640 
+#define SEND_Q_DEPTH    640
 #define DC_KEY          0xffeeddcc  /*this is defined for both sides: client and server*/
 #define COMP_ARRAY_SIZE 16
 #define TC_PRIO         3
 
-#define WR_ID_FLUSH_MARKER UINT64_MAX  
+#define WR_ID_FLUSH_MARKER UINT64_MAX
 
 #define mmin(a, b)      a < b ? a : b
 
@@ -110,7 +110,7 @@ struct rdma_device {
     struct ibv_qp      *qp;
     struct ibv_qp_ex       *qpex;  /* DCI (server) only */
     struct mlx5dv_qp_ex    *mqpex; /* DCI (server) only */
-    
+
     /* Address handler (port info) relateed fields */
     int                 ib_port;
     int                 is_global;
@@ -233,7 +233,7 @@ static struct ibv_context *open_ib_device_by_name(const char *ib_dev_name)
     }
     DEBUG_LOG("created ib context %p\n", context);
     /* We are now done with device list, we can free it */
-    
+
 clean_device_list:
     ibv_free_device_list(dev_list); /*dev_list is not NULL*/
 
@@ -283,7 +283,7 @@ static struct ibv_context *open_ib_device_by_addr(struct rdma_device *rdma_dev, 
     rdma_dev->gidx = -1;
 
     DEBUG_LOG("bound to RDMA device name:%s, port:%d, based on '%s'\n",
-              rdma_dev->cm_id->verbs->device->name, rdma_dev->cm_id->port_num, str); 
+              rdma_dev->cm_id->verbs->device->name, rdma_dev->cm_id->port_num, str);
 
     return rdma_dev->cm_id->verbs;
 
@@ -348,10 +348,10 @@ static int rdma_set_lid_gid_from_port_info(struct rdma_device *rdma_dev)
     }
 
     if (rdma_dev->cm_id && portinfo.link_layer == IBV_LINK_LAYER_ETHERNET) {
-        rdma_dev->gidx = ibv_find_sgid_type(rdma_dev->context, rdma_dev->ib_port, 
+        rdma_dev->gidx = ibv_find_sgid_type(rdma_dev->context, rdma_dev->ib_port,
                 IBV_GID_TYPE_ROCE_V2, rdma_dev->cm_id->route.addr.src_addr.sa_family);
     }
-    
+
     if (rdma_dev->gidx < 0) {
         if (portinfo.link_layer == IBV_LINK_LAYER_ETHERNET) {
             fprintf(stderr, "Wrong GID index (%d) for ETHERNET port\n", rdma_dev->gidx);
@@ -367,7 +367,7 @@ static int rdma_set_lid_gid_from_port_info(struct rdma_device *rdma_dev)
         }
         DEBUG_LOG ("my gid idx: %d, value:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n", rdma_dev->gidx,
                    rdma_dev->gid.raw[0], rdma_dev->gid.raw[1], rdma_dev->gid.raw[2], rdma_dev->gid.raw[3],
-                   rdma_dev->gid.raw[4], rdma_dev->gid.raw[5], rdma_dev->gid.raw[6], rdma_dev->gid.raw[7], 
+                   rdma_dev->gid.raw[4], rdma_dev->gid.raw[5], rdma_dev->gid.raw[6], rdma_dev->gid.raw[7],
                    rdma_dev->gid.raw[8], rdma_dev->gid.raw[9], rdma_dev->gid.raw[10], rdma_dev->gid.raw[11],
                    rdma_dev->gid.raw[12], rdma_dev->gid.raw[13], rdma_dev->gid.raw[14], rdma_dev->gid.raw[15] );
     }
@@ -427,7 +427,7 @@ static int modify_source_qp_to_rtr_and_rts(struct rdma_device *rdma_dev)
     enum ibv_qp_attr_mask   attr_mask;
 
     memset(&qp_attr, 0, sizeof qp_attr);
-    
+
     /* - - - - - - -  Modify QP to RTR  - - - - - - - */
     qp_attr.qp_state = IBV_QPS_RTR;
     qp_attr.path_mtu = rdma_dev->mtu;
@@ -471,24 +471,24 @@ static int modify_source_qp_to_rtr_and_rts(struct rdma_device *rdma_dev)
         return 1;
     }
     DEBUG_LOG ("ibv_modify_qp to state %d completed: qp_num = 0x%lx\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
-    
+
     return 0;
 }
 
-static int destroy_qp(struct ibv_qp *qp) 
+static int destroy_qp(struct ibv_qp *qp)
 {
 	int ret;
 	if (qp) {
 		DEBUG_LOG("ibv_destroy_qp(%p)\n", qp);
 		ret = ibv_destroy_qp(qp);
 		if (ret) {
-			fprintf(stderr, "Couldn't destroy QP: error %d\n", ret);  
+			fprintf(stderr, "Couldn't destroy QP: error %d\n", ret);
 		}
 	}
 	return ret;
 }
 
-static int modify_source_qp_rst2rts(struct rdma_device *rdma_dev) 
+static int modify_source_qp_rst2rts(struct rdma_device *rdma_dev)
 {
     int ret_val;
     /* - - - - - - - - - -  Modify QP to INIT  - - - - - - - - - - - - - */
@@ -510,7 +510,7 @@ static int modify_source_qp_rst2rts(struct rdma_device *rdma_dev)
         return 1;
     }
     DEBUG_LOG("ibv_modify_qp to state %d completed: qp_num = 0x%lx\n", qp_attr.qp_state, rdma_dev->qp->qp_num);
-    
+
     /* - - - - - - - - - - - - -  Modify QP to RTS  - - - - - - - - - - - - */
     ret_val = modify_source_qp_to_rtr_and_rts(rdma_dev);
     if (ret_val) {
@@ -550,7 +550,7 @@ struct rdma_device *rdma_open_device_client(struct sockaddr *addr)
     }
 
     /****************************************************************************************************/
-    
+
     DEBUG_LOG ("ibv_alloc_pd(ibv_context = %p)\n", rdma_dev->context);
     rdma_dev->pd = ibv_alloc_pd(rdma_dev->context);
     if (!rdma_dev->pd) {
@@ -562,7 +562,7 @@ struct rdma_device *rdma_open_device_client(struct sockaddr *addr)
     /* **********************************  Create CQ  ********************************** */
 #ifdef PRINT_LATENCY
 	struct ibv_cq_init_attr_ex cq_attr_ex;
-	
+
     memset(&cq_attr_ex, 0, sizeof(cq_attr_ex));
 	cq_attr_ex.cqe = CQ_DEPTH;
 	cq_attr_ex.cq_context = rdma_dev;
@@ -653,7 +653,7 @@ struct rdma_device *rdma_open_device_client(struct sockaddr *addr)
     if (ret_val) {
         goto clean_qp;
     }
-    
+
     DEBUG_LOG("init AH cache\n");
     kh_init_inplace(kh_ib_ah, &rdma_dev->ah_hash);
 
@@ -662,7 +662,7 @@ struct rdma_device *rdma_open_device_client(struct sockaddr *addr)
     //struct ibv_query_device_ex_input    query_device_ex_input = {
     //    .comp_masc = ...
     //}
-    
+
     ret_val = ibv_query_device_ex(rdma_dev->context, /*struct ibv_query_device_ex_input*/NULL, &device_attr_ex);
     if (ret_val) {
         fprintf(stderr, "ibv_query_device_ex failed\n");
@@ -676,7 +676,7 @@ struct rdma_device *rdma_open_device_client(struct sockaddr *addr)
     rdma_dev->hca_core_clock_kHz = device_attr_ex.hca_core_clock;
     DEBUG_LOG("hca_core_clock = %d kHz\n", rdma_dev->hca_core_clock_kHz);
 #endif /*PRINT_LATENCY*/
-    
+
     return rdma_dev;
 
 clean_qp:
@@ -703,7 +703,7 @@ clean_pd:
 
 clean_device:
     close_ib_device(rdma_dev);
-    
+
 clean_rdma_dev:
     free(rdma_dev);
 
@@ -731,7 +731,7 @@ struct rdma_device *rdma_open_device_server(struct sockaddr *addr)
     if (!rdma_dev->context){
         goto clean_rdma_dev;
     }
-    
+
     ret_val = rdma_set_lid_gid_from_port_info(rdma_dev);
     if (ret_val) {
         goto clean_device;
@@ -748,11 +748,11 @@ struct rdma_device *rdma_open_device_server(struct sockaddr *addr)
     DEBUG_LOG("created pd %p\n", rdma_dev->pd);
 
     /* We don't create completion events channel (ibv_create_comp_channel), we prefer working in polling mode */
-    
+
     /* **********************************  Create CQ  ********************************** */
 #ifdef PRINT_LATENCY
 	struct ibv_cq_init_attr_ex cq_attr_ex;
-	
+
     memset(&cq_attr_ex, 0, sizeof(cq_attr_ex));
 	cq_attr_ex.cqe = CQ_DEPTH;
 	cq_attr_ex.cq_context = rdma_dev;
@@ -796,7 +796,7 @@ struct rdma_device *rdma_open_device_server(struct sockaddr *addr)
     /* create DCI */
     attr_dv.comp_mask |= MLX5DV_QP_INIT_ATTR_MASK_DC;
     attr_dv.dc_init_attr.dc_type = MLX5DV_DCTYPE_DCI;
-    
+
     attr_ex.cap.max_send_wr  = SEND_Q_DEPTH;
     attr_ex.cap.max_send_sge = MAX_SEND_SGE;
     rdma_dev->qp_available_wr = SEND_Q_DEPTH;
@@ -806,7 +806,7 @@ struct rdma_device *rdma_open_device_server(struct sockaddr *addr)
 
     attr_dv.comp_mask |= MLX5DV_QP_INIT_ATTR_MASK_QP_CREATE_FLAGS;
     attr_dv.create_flags |= MLX5DV_QP_CREATE_DISABLE_SCATTER_TO_CQE; /*driver doesnt support scatter2cqe data-path on DCI yet*/
-    
+
     DEBUG_LOG ("mlx5dv_create_qp(%p)\n", rdma_dev->context);
     rdma_dev->qp = mlx5dv_create_qp(rdma_dev->context, &attr_ex, &attr_dv);
     DEBUG_LOG ("mlx5dv_create_qp %p completed: qp_num = 0x%lx\n", rdma_dev->qp, rdma_dev->qp->qp_num);
@@ -832,13 +832,13 @@ struct rdma_device *rdma_open_device_server(struct sockaddr *addr)
 
     DEBUG_LOG("init AH cache\n");
     kh_init_inplace(kh_ib_ah, &rdma_dev->ah_hash);
-    
+
 #ifdef PRINT_LATENCY
     struct ibv_device_attr_ex           device_attr_ex = {};
     //struct ibv_query_device_ex_input    query_device_ex_input = {
     //    .comp_masc = ...
     //}
-    
+
     ret_val = ibv_query_device_ex(rdma_dev->context, /*struct ibv_query_device_ex_input*/NULL, &device_attr_ex);
     if (ret_val) {
         fprintf(stderr, "ibv_query_device_ex failed\n");
@@ -856,7 +856,7 @@ struct rdma_device *rdma_open_device_server(struct sockaddr *addr)
     rdma_dev->min_completion_latency = 0x8FFFFFFFFFFFFFFF;
     rdma_dev->min_read_comp_latency = 0x8FFFFFFFFFFFFFFF;
 #endif /*PRINT_LATENCY*/
-    
+
     return rdma_dev;
 
 clean_qp:
@@ -881,22 +881,22 @@ clean_device:
 
 clean_rdma_dev:
     free(rdma_dev);
-    
+
     return NULL;
 }
 
 //===========================================================================================
 static
-int rdma_exec_task(struct rdma_exec_params *exec_params) 
+int rdma_exec_task(struct rdma_exec_params *exec_params)
 {
 	int ret_val;
 	int required_wr = (exec_params->local_buf_iovcnt) ? (exec_params->local_buf_iovcnt + MAX_SEND_SGE - 1) / MAX_SEND_SGE : 1;
 	if (required_wr > exec_params->device->qp_available_wr) {
-		fprintf(stderr, "Required WR number %d is greater than available in QP WRs %d\n", 
+		fprintf(stderr, "Required WR number %d is greater than available in QP WRs %d\n",
 				required_wr, exec_params->device->qp_available_wr);
 		return 1;
 	}
-	void (*ibv_wr_rdma_rw_post)(struct ibv_qp_ex *qp, uint32_t rkey, uint64_t remote_addr) = (exec_params->flags & RDMA_TASK_ATTR_RDMA_READ) 
+	void (*ibv_wr_rdma_rw_post)(struct ibv_qp_ex *qp, uint32_t rkey, uint64_t remote_addr) = (exec_params->flags & RDMA_TASK_ATTR_RDMA_READ)
 		? ibv_wr_rdma_read // client wants to send data to the server
 		: ibv_wr_rdma_write; // client wants to receive data from the server
 
@@ -949,14 +949,14 @@ int rdma_exec_task(struct rdma_exec_params *exec_params)
 					exec_params->flags & RDMA_TASK_ATTR_RDMA_READ ? "read" : "write",
 					(long long unsigned int)exec_params->wr_id, exec_params->device->qpex, exec_params->rem_buf_rkey, (long long unsigned int)curr_rem_addr);
 			ibv_wr_rdma_rw_post(exec_params->device->qpex, exec_params->rem_buf_rkey, curr_rem_addr);
-		
+
 			for (i = 0; i < curr_iovcnt; i++) {
 				sg_list[i].addr   = (uint64_t)exec_params->local_buf_iovec[start_i + i].iov_base;
 				sg_list[i].length = (uint32_t)exec_params->local_buf_iovec[start_i + i].iov_len;
 				sg_list[i].lkey   = exec_params->local_buf_mr_lkey;
 				curr_rem_addr += sg_list[i].length;
 			}
-		
+
 			DEBUG_LOG_FAST_PATH("RDMA Read/Write: ibv_wr_set_sge_list(qpex=%p, num_sge=%lu, sg_list=%p), start_i=%d, num_sges_to_send=%d, sg[0].length=%u\n",
 				exec_params->device->qpex, (size_t)curr_iovcnt, (void*)sg_list, start_i, num_sges_to_send, sg_list[0].length);
 			ibv_wr_set_sge_list(exec_params->device->qpex, (size_t)curr_iovcnt, sg_list);
@@ -976,7 +976,7 @@ int rdma_exec_task(struct rdma_exec_params *exec_params)
 				(long long unsigned int)exec_params->wr_id, exec_params->device->qpex, exec_params->rem_buf_rkey, (unsigned long long)exec_params->rem_buf_addr);
 
 		ibv_wr_rdma_rw_post(exec_params->device->qpex, exec_params->rem_buf_rkey, exec_params->rem_buf_addr);
-		
+
 		DEBUG_LOG_FAST_PATH("RDMA Read/Write: ibv_wr_set_sge: qpex=%p, lkey=0x%x, local_buf=0x%llx, size=%u\n",
 				exec_params->device->qpex, exec_params->local_buf_mr_lkey,
 				(unsigned long long)exec_params->local_buf_addr, exec_params->rem_buf_size);
@@ -1015,7 +1015,7 @@ int rdma_reset_device(struct rdma_device *device)
 	struct ibv_qp_attr      qp_attr;
 	enum ibv_qp_attr_mask   attr_mask;
 	memset(&qp_attr, 0, sizeof qp_attr);
-	
+
 	/* - - - - - - - Modify QP to ERR - - - - - - - */
 	qp_attr.qp_state = IBV_QPS_ERR;
 	attr_mask = IBV_QP_STATE;
@@ -1025,7 +1025,7 @@ int rdma_reset_device(struct rdma_device *device)
 		fprintf(stderr, "Failed to modify QP to ERR\n");
 		return 1;
 	}
-	
+
 	/* - - - - - - - FLUSH WORK COMPLETIONS - - - - - - - */
 	struct rdma_exec_params exec_params;
 	memset(&exec_params, 0, sizeof exec_params);
@@ -1119,7 +1119,7 @@ void rdma_close_device(struct rdma_device *rdma_dev)
             return;
         }
     }
-    
+
     DEBUG_LOG("ibv_destroy_cq(%p)\n", rdma_dev->cq);
 #ifdef PRINT_LATENCY
     ibv_destroy_cq(ibv_cq_ex_to_cq(rdma_dev->cq));
@@ -1187,7 +1187,7 @@ clean_rdma_buff:
     /* We don't decrement device rdma_buff_cnt because we still did not increment it,
     we just free the allocated for rdma_buff memory. */
     free(rdma_buff);
-    
+
     return NULL;
 }
 
@@ -1246,7 +1246,7 @@ int rdma_buffer_get_desc_str(struct rdma_buffer *rdma_buff, char *desc_str, size
                 desc_length, BUFF_DESC_STRING_LENGTH);
         return 0;
     }
-    /*       addr             size     rkey     lid  dctn   g 
+    /*       addr             size     rkey     lid  dctn   g
             "0102030405060708:01020304:01020304:0102:010203:1:" */
     sprintf(desc_str, "%016llx:%08lx:%08x:%04x:%06x:%d:",
             (unsigned long long)rdma_buff->buf_addr,
@@ -1255,9 +1255,9 @@ int rdma_buffer_get_desc_str(struct rdma_buffer *rdma_buff, char *desc_str, size
             rdma_buff->rdma_dev->lid,
             rdma_buff->rdma_dev->qp->qp_num /* dctn */,
             rdma_buff->rdma_dev->is_global & 0x1);
-    
+
     gid_to_wire_gid(&rdma_buff->rdma_dev->gid, desc_str + sizeof "0102030405060708:01020304:01020304:0102:010203:1");
-    
+
     return strlen(desc_str) + 1; /*including the terminating null character*/
 }
 
@@ -1358,7 +1358,7 @@ int rdma_submit_task(struct rdma_task_attr *attr)
 	 * Parse desc string, extracting remote buffer address, size, rkey, lid, dctn, and if global is true, also gid
 	 */
 	DEBUG_LOG_FAST_PATH("Starting to parse desc string: \"%s\"\n", attr->remote_buf_desc_str);
-	/*   addr             size     rkey     lid  dctn   g gid                                              
+	/*   addr             size     rkey     lid  dctn   g gid
 	 *  "0102030405060708:01020304:01020304:0102:010203:1:0102030405060708090a0b0c0d0e0f10"*/
 	sscanf(attr->remote_buf_desc_str, "%llx:%lx:%lx:%hx:%lx:%d",
 			&exec_params.rem_buf_addr, &exec_params.rem_buf_size,
@@ -1372,7 +1372,7 @@ int rdma_submit_task(struct rdma_task_attr *attr)
 			exec_params.rem_buf_addr, exec_params.rem_buf_size, attr->remote_buf_offset, exec_params.rem_buf_rkey, rem_lid, exec_params.rem_dctn, is_global);
        	DEBUG_LOG_FAST_PATH("Rem GID: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
                         rem_gid.raw[0],  rem_gid.raw[1],  rem_gid.raw[2],  rem_gid.raw[3],
-                        rem_gid.raw[4],  rem_gid.raw[5],  rem_gid.raw[6],  rem_gid.raw[7], 
+                        rem_gid.raw[4],  rem_gid.raw[5],  rem_gid.raw[6],  rem_gid.raw[7],
                         rem_gid.raw[8],  rem_gid.raw[9],  rem_gid.raw[10], rem_gid.raw[11],
                         rem_gid.raw[12], rem_gid.raw[13], rem_gid.raw[14], rem_gid.raw[15] );
 	DEBUG_LOG_FAST_PATH("rdma_task_attr_flags=%08x\n", exec_params.flags);
@@ -1393,7 +1393,7 @@ int rdma_submit_task(struct rdma_task_attr *attr)
 			return ret_val;
 		}
 	}
-    
+
     /* Check if address handler corresponding to the given key is present in the hash table,
        if yes - return it and if it is not, create ah and add it to the hash table */
     struct ibv_ah_attr  ah_attr;
@@ -1402,7 +1402,7 @@ int rdma_submit_task(struct rdma_task_attr *attr)
     ah_attr.is_global   = is_global;
     ah_attr.dlid        = rem_lid;
     ah_attr.port_num    = exec_params.device->ib_port;
-    
+
     if (ah_attr.is_global) {
         ah_attr.grh.hop_limit = 1;
         ah_attr.grh.dgid = rem_gid;
@@ -1442,7 +1442,7 @@ int rdma_poll_completions(struct rdma_device            *rdma_dev,
         perror("ibv_start_poll");
         return reported_entries; /*0*/
     }
-    
+
     while (ret_val != ENOENT) {
         uint64_t cq_wr_id = rdma_dev->cq->wr_id;
         DEBUG_LOG_FAST_PATH("virtual wr_id %llu, original wr_id 0x%llx, num_wrs=%d\n",
@@ -1456,9 +1456,9 @@ int rdma_poll_completions(struct rdma_device            *rdma_dev,
         	event[reported_entries].status = rdma_dev->cq->status;
         	reported_entries++;
 	}
-        
+
         rdma_dev->latency[cq_wr_id].completion_ts = ibv_wc_read_completion_ts(rdma_dev->cq);
-        
+
         struct ibv_values_ex ts_values = {
             .comp_mask = IBV_VALUES_MASK_RAW_CLOCK,
             .raw_clock = {} /*struct timespec*/
@@ -1474,7 +1474,7 @@ int rdma_poll_completions(struct rdma_device            *rdma_dev,
         uint64_t    wr_complete_latency = rdma_dev->latency[cq_wr_id].wr_complete_ts - rdma_dev->latency[cq_wr_id].wr_start_ts;
         uint64_t    completion_latency  = rdma_dev->latency[cq_wr_id].completion_ts  - rdma_dev->latency[cq_wr_id].wr_start_ts;
         uint64_t    read_comp_latency   = rdma_dev->latency[cq_wr_id].read_comp_ts   - rdma_dev->latency[cq_wr_id].completion_ts;
-        
+
         rdma_dev->measure_index++;
         rdma_dev->wr_complete_latency_sum += wr_complete_latency;
         rdma_dev->completion_latency_sum  += completion_latency;
@@ -1486,14 +1486,14 @@ int rdma_poll_completions(struct rdma_device            *rdma_dev,
                                             completion_latency: rdma_dev->min_completion_latency;
         rdma_dev->min_read_comp_latency   = (read_comp_latency < rdma_dev->min_read_comp_latency)?
                                             read_comp_latency: rdma_dev->min_read_comp_latency;
-        
+
         rdma_dev->max_wr_complete_latency = (wr_complete_latency > rdma_dev->max_wr_complete_latency)?
                                             wr_complete_latency: rdma_dev->max_wr_complete_latency;
         rdma_dev->max_completion_latency  = (completion_latency > rdma_dev->max_completion_latency)?
                                             completion_latency: rdma_dev->max_completion_latency;
         rdma_dev->max_read_comp_latency   = (read_comp_latency > rdma_dev->max_read_comp_latency)?
                                             read_comp_latency: rdma_dev->max_read_comp_latency;
-        
+
         DEBUG_LOG_FAST_PATH("PRINT_LATENCY: wr_id = %6lu, wr_sent latency: current %8lu, min %8lu, max %8lu, avg %8lu (nSec)\n",
 			cq_wr_id,
 			wr_complete_latency * 1000000 / rdma_dev->hca_core_clock_kHz,
@@ -1506,7 +1506,7 @@ int rdma_poll_completions(struct rdma_device            *rdma_dev,
 			rdma_dev->min_completion_latency * 1000000 / rdma_dev->hca_core_clock_kHz,
 			rdma_dev->max_completion_latency * 1000000 / rdma_dev->hca_core_clock_kHz,
 			rdma_dev->completion_latency_sum / rdma_dev->measure_index * 1000000 / rdma_dev->hca_core_clock_kHz);
-        
+
         DEBUG_LOG_FAST_PATH("PRINT_LATENCY:   read_comp latency            : current %8lu, min %8lu, max %8lu, avg %8lu (nSec)\n",
 			read_comp_latency * 1000000 / rdma_dev->hca_core_clock_kHz,
 			rdma_dev->min_read_comp_latency * 1000000 / rdma_dev->hca_core_clock_kHz,
@@ -1523,13 +1523,13 @@ int rdma_poll_completions(struct rdma_device            *rdma_dev,
 #else /*PRINT_LATENCY*/
     struct ibv_wc wc[COMP_ARRAY_SIZE];
     int    i, wcn;
-    
+
     wcn = ibv_poll_cq(rdma_dev->cq, num_entries, wc);
     if (wcn < 0) {
         fprintf(stderr, "poll CQ failed %d\n", wcn);
         return 0;
     }
-    
+
     for (i = 0; i < wcn; ++i) {
         DEBUG_LOG_FAST_PATH("cqe idx %d: virtual wr_id %llu, original wr_id 0x%llx, num_wrs=%d\n",
                             i, (long long unsigned int)wc[i].wr_id,
