@@ -946,8 +946,12 @@ int rdma_exec_task(struct rdma_exec_params *exec_params)
 			exec_params->device->qpex->wr_flags = num_sges_to_send > MAX_SEND_SGE ? 0 : IBV_SEND_SIGNALED;
 
 			DEBUG_LOG_FAST_PATH("RDMA Read/Write: ibv_wr_rdma_%s: wr_id=0x%llx, qpex=%p, rkey=0x%lx, remote_buf=0x%llx\n",
-					exec_params->flags & RDMA_TASK_ATTR_RDMA_READ ? "read" : "write",
-					(long long unsigned int)exec_params->wr_id, exec_params->device->qpex, exec_params->rem_buf_rkey, (long long unsigned int)curr_rem_addr);
+                                exec_params->flags & RDMA_TASK_ATTR_RDMA_READ ? "read" : "write",
+					            (long long unsigned int)exec_params->wr_id,
+                                exec_params->device->qpex,
+                                exec_params->rem_buf_rkey,
+                                (long long unsigned int)curr_rem_addr);
+
 			ibv_wr_rdma_rw_post(exec_params->device->qpex, exec_params->rem_buf_rkey, curr_rem_addr);
 
 			for (i = 0; i < curr_iovcnt; i++) {
@@ -958,7 +962,13 @@ int rdma_exec_task(struct rdma_exec_params *exec_params)
 			}
 
 			DEBUG_LOG_FAST_PATH("RDMA Read/Write: ibv_wr_set_sge_list(qpex=%p, num_sge=%lu, sg_list=%p), start_i=%d, num_sges_to_send=%d, sg[0].length=%u\n",
-				exec_params->device->qpex, (size_t)curr_iovcnt, (void*)sg_list, start_i, num_sges_to_send, sg_list[0].length);
+                                exec_params->device->qpex,
+                                (size_t)curr_iovcnt,
+                                (void*)sg_list,
+                                start_i,
+                                num_sges_to_send,
+                                sg_list[0].length);
+
 			ibv_wr_set_sge_list(exec_params->device->qpex, (size_t)curr_iovcnt, sg_list);
 			num_sges_to_send -= curr_iovcnt;
 			start_i += curr_iovcnt;
@@ -972,18 +982,27 @@ int rdma_exec_task(struct rdma_exec_params *exec_params)
 		exec_params->device->qpex->wr_flags = IBV_SEND_SIGNALED;
 
 		DEBUG_LOG_FAST_PATH("RDMA Read/Write: ibv_wr_rdma_%s: wr_id=0x%llx, qpex=%p, rkey=0x%lx, remote_buf=0x%llx\n",
-				exec_params->flags & RDMA_TASK_ATTR_RDMA_READ ? "read" : "write",
-				(long long unsigned int)exec_params->wr_id, exec_params->device->qpex, exec_params->rem_buf_rkey, (unsigned long long)exec_params->rem_buf_addr);
+                            exec_params->flags & RDMA_TASK_ATTR_RDMA_READ ? "read" : "write",
+                            (long long unsigned int)exec_params->wr_id,
+                            exec_params->device->qpex,
+                            exec_params->rem_buf_rkey,
+                            (unsigned long long)exec_params->rem_buf_addr);
 
 		ibv_wr_rdma_rw_post(exec_params->device->qpex, exec_params->rem_buf_rkey, exec_params->rem_buf_addr);
 
 		DEBUG_LOG_FAST_PATH("RDMA Read/Write: ibv_wr_set_sge: qpex=%p, lkey=0x%x, local_buf=0x%llx, size=%u\n",
-				exec_params->device->qpex, exec_params->local_buf_mr_lkey,
-				(unsigned long long)exec_params->local_buf_addr, exec_params->rem_buf_size);
+				            exec_params->device->qpex,
+                            exec_params->local_buf_mr_lkey,
+				            (unsigned long long)exec_params->local_buf_addr,
+                            exec_params->rem_buf_size);
+
 		ibv_wr_set_sge(exec_params->device->qpex, exec_params->local_buf_mr_lkey, (uintptr_t)exec_params->local_buf_addr, exec_params->rem_buf_size);
 
 		DEBUG_LOG_FAST_PATH("RDMA Read/Write: mlx5dv_wr_set_dc_addr: mqpex=%p, ah=%p, rem_dctn=0x%06lx\n",
-				exec_params->device->mqpex, exec_params->ah, exec_params->rem_dctn);
+            				exec_params->device->mqpex,
+                            exec_params->ah,
+                            exec_params->rem_dctn);
+
 		mlx5dv_wr_set_dc_addr(exec_params->device->mqpex, exec_params->ah, exec_params->rem_dctn, DC_KEY);
 	}
 

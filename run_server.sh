@@ -6,6 +6,6 @@
 
 echo "running the server side"
 set -x
-./server -a 192.168.0.100 -n 10 -D 3 -s 3392160 -p 18001 -P &
+./server -a 192.168.0.100 -n 10 -D 3 -s 3392160 -u 42:00.0 -p 18001 -P
 
 set +x

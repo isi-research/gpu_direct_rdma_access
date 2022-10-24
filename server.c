@@ -70,6 +70,8 @@ struct user_params {
     unsigned long       size;
     int                 iters;
     int                 num_sges;
+    int                 use_cuda;
+    char                *bdf;
     struct sockaddr     hostaddr;
 };
 
@@ -138,8 +140,8 @@ static int open_server_socket(int port)
     if (sockfd < 0) {
         fprintf(stderr, "accept() failed\n");
         return -1;
-    } 
-    
+    }
+
     return sockfd;
 }
 
@@ -157,6 +159,8 @@ static void usage(const char *argv0)
     printf("  -l, --sg_list-len=<length> number of sge-s to send in sg_list (default 0 - old mode)\n");
     printf("  -D, --debug-mask=<mask>   debug bitmask: bit 0 - debug print enable,\n"
            "                                           bit 1 - fast path debug print enable\n");
+    printf("  -u, --use-cuda=<BDF>      use CUDA pacage (work with GPU memoty),\n"
+           "                            BDF corresponding to CUDA device, for example, \"3e:02.0\"\n");
 }
 
 static int parse_command_line(int argc, char *argv[], struct user_params *usr_par)
@@ -183,7 +187,7 @@ static int parse_command_line(int argc, char *argv[], struct user_params *usr_pa
 
         c = getopt_long(argc, argv, "Pa:p:s:n:l:D:",
                         long_options, NULL);
-        
+
         if (c == -1)
             break;
 
@@ -222,6 +226,16 @@ static int parse_command_line(int argc, char *argv[], struct user_params *usr_pa
             debug_fast_path = (strtol(optarg, NULL, 0) >> 1) & 1; /*bit 1*/
             break;
 
+        case 'u':
+            usr_par->use_cuda = 1;
+            usr_par->bdf = calloc(1, strlen(optarg)+1);
+            if (!usr_par->bdf){
+                fprintf(stderr, "FAILURE: BDF mem alloc failure (errno=%d '%m')", errno);
+                return 1;
+            }
+            strcpy(usr_par->bdf, optarg);
+            break;
+
         default:
             usage(argv[0]);
             return 1;
@@ -258,10 +272,10 @@ int main(int argc, char *argv[])
         ret_val = 1;
         return ret_val;
     }
-    
+
     /* Local memory buffer allocation */
     /* On the server side, we allocate buffer on CPU and not on GPU */
-    void *buff = work_buffer_alloc(usr_par.size, 0 /*use_cuda*/, NULL);
+    void *buff = work_buffer_alloc(usr_par.size, usr_par.use_cuda, usr_par.use_cuda ? usr_par.bdf : NULL);
     if (!buff) {
         ret_val = 1;
         goto clean_device;
@@ -293,7 +307,7 @@ sock_listen:
         ret_val = 1;
         goto clean_socket;
     }
- 
+
     /****************************************************************************************************
      * The main loop where we client and server send and receive "iters" number of messages
      */
@@ -307,16 +321,16 @@ sock_listen:
         uint32_t                       flags; /* Use enum rdma_task_attr_flags */
         // payload attrs
         uint8_t                        pl_type;
-        uint16_t                       pl_size; 
+        uint16_t                       pl_size;
         //int     expected_comp_events = usr_par.num_sges? (usr_par.num_sges+MAX_SEND_SGE-1)/MAX_SEND_SGE: 1;
-       
+
         for (i = 0; i < PACKAGE_TYPES; i++) {
             r_size = recv(sockfd, &pl_type, sizeof(pl_type), MSG_WAITALL);
             r_size = recv(sockfd, &pl_size, sizeof(pl_size), MSG_WAITALL);
             switch (pl_type) {
                 case 0: // RDMA_BUF_DESC
                     /* Receiving RDMA data (address, size, rkey etc.) from socket as a triger to start RDMA Read/Write operation */
-                    DEBUG_LOG_FAST_PATH("Iteration %d: Waiting to Receive message of size %lu\n", cnt, sizeof desc_str);   
+                    DEBUG_LOG_FAST_PATH("Iteration %d: Waiting to Receive message of size %lu\n", cnt, sizeof desc_str);
                     r_size = recv(sockfd, desc_str, pl_size * sizeof(char), MSG_WAITALL);
                     if (r_size != sizeof desc_str) {
                         fprintf(stderr, "FAILURE: Couldn't receive RDMA data for iteration %d (errno=%d '%m')\n", cnt, errno);
@@ -338,7 +352,7 @@ sock_listen:
                     break;
             }
         }
-        
+
         DEBUG_LOG_FAST_PATH("Received message \"%s\"\n", desc_str);
         memset(&task_attr, 0, sizeof task_attr);
         task_attr.remote_buf_desc_str      = desc_str;
