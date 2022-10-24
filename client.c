@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
           //Read the content
           char host_msg[128];
           cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost);
-          DEBUG_LOG_FAST_PATH("Written data from the server side %d: \"%s\"\n", cnt, host_msg);
+          DEBUG_LOG_FAST_PATH("Written data from the server to GPU memory. Frame=[%d], data=[%s]\n", cnt, host_msg);
         } else {
             DEBUG_LOG_FAST_PATH("Written data \"%s\"\n", (char*)buff);
         }

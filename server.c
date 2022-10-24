@@ -364,7 +364,7 @@ sock_listen:
         task_attr.wr_id                    = cnt;// * expected_comp_events;
 
         /* Executing RDMA read */
-        //Pourya
+        //Pourya: DO NOT WRITE to gpu buffer from host like this
         // SDEBUG_LOG_FAST_PATH ((char*)buff, "Read iteration N %d", cnt);
 
         if(usr_par.use_cuda) {
@@ -372,8 +372,8 @@ sock_listen:
           char msg[128];
           memset(msg, 0, 128);
           snprintf(msg, 128, "write frame number %d", cnt);
-          DEBUG_LOG_FAST_PATH("Copying message to cuda memory [%s]\n", msg);
-          LOG_CUDA_ERROR(cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice));
+          DEBUG_LOG_FAST_PATH(">> Copying message to cuda memory [%s]\n", msg);
+          cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice);
         }
 
         /* Prepare send sg_list */
@@ -414,10 +414,11 @@ sock_listen:
             if (rdma_comp_ev[i].status != IBV_WC_SUCCESS) {
                 fprintf(stderr, "FAILURE: status \"%s\" (%d) for wr_id %d\n",
                         ibv_wc_status_str(rdma_comp_ev[i].status),
-                        rdma_comp_ev[i].status, (int) rdma_comp_ev[i].wr_id);
+                        rdma_comp_ev[i].status,
+                        (int) rdma_comp_ev[i].wr_id);
                 ret_val = 1;
                	if (usr_par.persistent && keep_running) {
-			rdma_reset_device(rdma_dev);
+			            rdma_reset_device(rdma_dev);
                 }
 		goto clean_socket;
             }

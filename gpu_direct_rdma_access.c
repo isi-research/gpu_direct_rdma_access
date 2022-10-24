@@ -982,26 +982,29 @@ int rdma_exec_task(struct rdma_exec_params *exec_params)
 		exec_params->device->qpex->wr_flags = IBV_SEND_SIGNALED;
 
 		DEBUG_LOG_FAST_PATH("RDMA Read/Write: ibv_wr_rdma_%s: wr_id=0x%llx, qpex=%p, rkey=0x%lx, remote_buf=0x%llx\n",
-                            exec_params->flags & RDMA_TASK_ATTR_RDMA_READ ? "read" : "write",
-                            (long long unsigned int)exec_params->wr_id,
-                            exec_params->device->qpex,
-                            exec_params->rem_buf_rkey,
-                            (unsigned long long)exec_params->rem_buf_addr);
+                        exec_params->flags & RDMA_TASK_ATTR_RDMA_READ ? "read" : "write",
+                        (long long unsigned int)exec_params->wr_id,
+                        exec_params->device->qpex,
+                        exec_params->rem_buf_rkey,
+                        (unsigned long long)exec_params->rem_buf_addr);
 
 		ibv_wr_rdma_rw_post(exec_params->device->qpex, exec_params->rem_buf_rkey, exec_params->rem_buf_addr);
 
 		DEBUG_LOG_FAST_PATH("RDMA Read/Write: ibv_wr_set_sge: qpex=%p, lkey=0x%x, local_buf=0x%llx, size=%u\n",
-				            exec_params->device->qpex,
-                            exec_params->local_buf_mr_lkey,
-				            (unsigned long long)exec_params->local_buf_addr,
-                            exec_params->rem_buf_size);
+				                exec_params->device->qpex,
+                        exec_params->local_buf_mr_lkey,
+				                (unsigned long long)exec_params->local_buf_addr,
+                        exec_params->rem_buf_size);
 
-		ibv_wr_set_sge(exec_params->device->qpex, exec_params->local_buf_mr_lkey, (uintptr_t)exec_params->local_buf_addr, exec_params->rem_buf_size);
+		ibv_wr_set_sge(exec_params->device->qpex,
+                   exec_params->local_buf_mr_lkey,
+                   (uintptr_t)exec_params->local_buf_addr,
+                   exec_params->rem_buf_size);
 
 		DEBUG_LOG_FAST_PATH("RDMA Read/Write: mlx5dv_wr_set_dc_addr: mqpex=%p, ah=%p, rem_dctn=0x%06lx\n",
-            				exec_params->device->mqpex,
-                            exec_params->ah,
-                            exec_params->rem_dctn);
+            				    exec_params->device->mqpex,
+                        exec_params->ah,
+                        exec_params->rem_dctn);
 
 		mlx5dv_wr_set_dc_addr(exec_params->device->mqpex, exec_params->ah, exec_params->rem_dctn, DC_KEY);
 	}
