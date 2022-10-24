@@ -33,9 +33,18 @@
 #ifndef _GPU_MEM_UTIL_H_
 #define _GPU_MEM_UTIL_H_
 
+#include <cuda_runtime.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define LOG_CUDA_ERROR(error) \
+  if (error != cudaSuccess) { \
+    fprintf(stderr, "CUDA Error(%d) %s (%s) at: %d\n", error, cudaGetErrorName(error), cudaGetErrorString(error), #error);\
+    exit(EXIT_FAILURE); \
+  } \
+
 
 /*
  * Memory allocation on CPU or GPU according to HAVE_CUDA pre-compile option and use_cuda flag

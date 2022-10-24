@@ -43,6 +43,7 @@
 #include <getopt.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <cuda_runtime.h>
 
 #include "utils.h"
 #include "gpu_mem_util.h"
@@ -55,11 +56,6 @@ extern int debug_fast_path;
 #define DEBUG_LOG_FAST_PATH if (debug_fast_path) printf
 #define FDEBUG_LOG if (debug) fprintf
 #define FDEBUG_LOG_FAST_PATH if (debug_fast_path) fprintf
-
-// #define DEBUG_LOG printf
-// #define DEBUG_LOG_FAST_PATH printf
-// #define FDEBUG_LOG fprintf
-// #define FDEBUG_LOG_FAST_PATH fprintf
 
 #define ACK_MSG "rdma_task completed"
 
@@ -426,7 +422,7 @@ int main(int argc, char *argv[])
             goto clean_package_data;
         }
 
-        // Wating for confirmation message from the socket that rdma_read/write from the server has beed completed
+        // Waiting for confirmation message from the socket that rdma_read/write from the server has beed completed
         ret_size = recv(sockfd, ackmsg, sizeof ackmsg, MSG_WAITALL);
         if (ret_size != sizeof ackmsg) {
             fprintf(stderr, "FAILURE: Couldn't read \"%s\" message, recv data size %d (errno=%d '%m')\n", ACK_MSG, ret_size, errno);
@@ -436,7 +432,12 @@ int main(int argc, char *argv[])
 
         // Printing received data for debug purpose
         DEBUG_LOG_FAST_PATH("Received ack N %d: \"%s\"\n", cnt, ackmsg);
-        if (!usr_par.use_cuda) {
+        if (usr_par.use_cuda) {
+          //Read the content
+          char host_msg[128];
+          LOG_CUDA_ERROR(cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost));
+          DEBUG_LOG_FAST_PATH("Written data from the server side %d: \"%s\"\n", cnt, host_msg);
+        } else {
             DEBUG_LOG_FAST_PATH("Written data \"%s\"\n", (char*)buff);
         }
     }

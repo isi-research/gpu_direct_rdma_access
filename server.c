@@ -44,6 +44,7 @@
 #include <getopt.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <cuda_runtime.h>
 
 #include "utils.h"
 #include "gpu_mem_util.h"
@@ -363,7 +364,18 @@ sock_listen:
         task_attr.wr_id                    = cnt;// * expected_comp_events;
 
         /* Executing RDMA read */
-        SDEBUG_LOG_FAST_PATH ((char*)buff, "Read iteration N %d", cnt);
+        //Pourya
+        // SDEBUG_LOG_FAST_PATH ((char*)buff, "Read iteration N %d", cnt);
+
+        if(usr_par.use_cuda) {
+          //copy to local memory
+          char msg[128];
+          memset(msg, 0, 128);
+          snprintf(msg, 128, "write frame number %d", cnt);
+          DEBUG_LOG_FAST_PATH("Copying message to cuda memory [%s]\n", msg);
+          LOG_CUDA_ERROR(cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice));
+        }
+
         /* Prepare send sg_list */
         if (usr_par.num_sges) {
             if (usr_par.num_sges > MAX_SGES) {
@@ -371,9 +383,10 @@ sock_listen:
                 ret_val = 1;
                 goto clean_socket;
             }
-	    memset(buf_iovec, 0, sizeof buf_iovec);
-	    task_attr.local_buf_iovcnt = usr_par.num_sges;
-	    task_attr.local_buf_iovec  = buf_iovec;
+
+            memset(buf_iovec, 0, sizeof buf_iovec);
+            task_attr.local_buf_iovcnt = usr_par.num_sges;
+            task_attr.local_buf_iovec  = buf_iovec;
 
             size_t  portion_size;
             portion_size = (usr_par.size / usr_par.num_sges) & 0xFFFFFFC0; /* 64 byte aligned */

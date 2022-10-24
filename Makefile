@@ -5,7 +5,7 @@ ODIR = obj
 CUDAFLAGS = -I/usr/local/cuda/targets/x86_64-linux/include
 CUDAFLAGS += -I/usr/local/cuda/include
 PRE_CFLAGS1 = -I$(IDIR) $(CUDAFLAGS) -g -DHAVE_CUDA
-LIBS = -Wall -lrdmacm -libverbs -lmlx5 -lcuda
+LIBS = -Wall -lrdmacm -libverbs -lmlx5 -lcuda -lcudart -L/usr/local/cuda/lib64
 
 ifeq ($(PRINT_LAT),1)
   CFLAGS = $(PRE_CFLAGS1) -DPRINT_LATENCY
