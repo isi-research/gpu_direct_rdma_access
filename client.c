@@ -437,9 +437,13 @@ int main(int argc, char *argv[])
         if (usr_par.use_cuda) {
           //Read the content
           char host_msg[128];
-          LOG_CUDA_ERROR(cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost));
-          cudaDeviceSynchronize();
-          DEBUG_LOG_FAST_PATH("Written data from the server to GPU memory. Frame=[%d], data=[%s]\n", cnt, host_msg);
+          const char expected_prefix[] = "write frame number";
+          do {
+            memset(host_msg, 0, 128);
+            LOG_CUDA_ERROR(cudaMemcpy(host_msg, buff, 128, cudaMemcpyDeviceToHost));
+          } while(strstr(host_msg, expected_prefix) == NULL);
+
+          DEBUG_LOG_FAST_PATH(">> Written data from the server to GPU memory. Frame=[%d], data=[%s]\n", cnt, host_msg);
         } else {
           DEBUG_LOG_FAST_PATH("Written data from the server to CPU Host memory. Frame=[%d], data=[%s]\n", cnt, (char*)buff);
         }

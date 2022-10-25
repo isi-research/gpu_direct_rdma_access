@@ -371,9 +371,22 @@ sock_listen:
           //copy to local memory
           char msg[128];
           memset(msg, 0, 128);
-          snprintf(msg, 128, "write frame number %d", cnt);
+          snprintf(msg, 128, "write frame number [%d] to gpu", cnt);
           DEBUG_LOG_FAST_PATH(">> Copying message to cuda memory [%s]\n", msg);
           LOG_CUDA_ERROR(cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice));
+
+          //verify
+          DEBUG_LOG_FAST_PATH(">> Verify the cuda memory copy\n");
+          char verify[128];
+          memset(verify, 0, 128);
+          LOG_CUDA_ERROR(cudaMemcpy(verify, buff, 128, cudaMemcpyDeviceToHost));
+          if(strncmp(msg, verify, 128) != 0) {
+            fprintf(stderr, "WARN: data verification failed. msg=[%s], verify=[%s]\n", msg, verify);
+            ret_val = 1;
+            goto clean_socket;
+          } else {
+            DEBUG_LOG_FAST_PATH(">> Verify message = [%s]\n", msg);
+          }
         } else {
           SDEBUG_LOG_FAST_PATH ((char*)buff, "Read iteration N %d", cnt);
         }
