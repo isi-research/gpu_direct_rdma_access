@@ -371,7 +371,7 @@ sock_listen:
           //copy to local memory
           char msg[128];
           memset(msg, 0, 128);
-          snprintf(msg, 128, "write frame number [%d] to gpu", cnt);
+          snprintf(msg, 128, "write frame number %d to gpu", cnt);
           DEBUG_LOG_FAST_PATH(">> Copying message to cuda memory [%s]\n", msg);
           LOG_CUDA_ERROR(cudaMemcpy(buff, msg, 128, cudaMemcpyHostToDevice));
 
