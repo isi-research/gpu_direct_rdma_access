@@ -212,6 +212,15 @@ static void *init_gpu(size_t gpu_buf_size, const char *bdf)
     }
     DEBUG_LOG("allocated GPU buffer address at %016llx pointer=%p\n", d_A, (void*)d_A);
 
+    //pin buffer for proper synchronization with the host
+    unsigned int flag = 1;
+    cu_result = cuPointerSetAttribute(&flag, CU_POINTER_ATTRIBUTE_SYNC_MEMOPS, d_A);
+    if (cu_result != CUDA_SUCCESS) {
+        fprintf(stderr, "cuPointerSetAttribute error=%d\n", cu_result);
+        return NULL;
+    }
+    DEBUG_LOG("pinned GPU buffer address using cuPointerSetAttribute at %016llx pointer=%p\n", d_A, (void*)d_A);
+
     return ((void*)d_A);
 }
 
